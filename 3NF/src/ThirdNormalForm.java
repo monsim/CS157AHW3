@@ -148,4 +148,32 @@ public class ThirdNormalForm {
 
         return true;
     }
+
+	// returns a set of all subsets of the attributes of R
+	// you need this method to compute the keys of R (later part of the algorithm)
+	public static ArrayList<Set<Integer>> subsets(Set<Integer> attributes) {
+	    ArrayList<Set<Integer>> sets = new ArrayList<Set<Integer>>();
+	    if (attributes.isEmpty()) {
+	        sets.add(new HashSet<Integer>());
+	        return sets;
+	    }
+	    ArrayList<Integer> list = new ArrayList<Integer>(attributes);
+	    int head = list.get(0);
+	    Set<Integer> rest = new HashSet<Integer>(list.subList(1, list.size())); 
+	    for (Set<Integer> set : subsets(rest)) {
+	        Set<Integer> newSet = new HashSet<Integer>();
+	        newSet.add(head);
+	        newSet.addAll(set);
+	        sets.add(newSet);
+	        sets.add(set);
+	    }       
+	    return sets;
+	}
+
+	// find the superkeys by computing the closure of all the subsets of the attributes
+	// the subsets whose closures are equal to all the attributes are superkeys
+	public static HashMap<ArrayList<Integer>, ArrayList<Integer>> findSuperkeys(
+			HashMap<ArrayList<Integer>, ArrayList<Integer>> fds, ArrayList<Integer> attributes) {
+		return null;
+	}
 }
