@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -100,6 +101,7 @@ public class ThirdNormalForm {
         }
         return result;
     }
+    
     private static HashSet<String> closure(String target, List<String> fds ) {
         HashSet<String> closure = new HashSet<String>();
         HashSet<String> xOld = new HashSet<String>();
@@ -140,17 +142,15 @@ public class ThirdNormalForm {
     private static List<String> clean(List<String> fds) {
         List<String> result = new ArrayList<String>();
         HashSet<String> seen = new HashSet<String>();
-        for (String fd: fds) {
+        for (String fd : fds) {
 //            System.out.println ("fd: " + fd);
 //            for (String s: seen) {
 //                System.out.println(s);
 //            }
-            boolean flag = true;
+            boolean flag = false;
             for (char c: fd.toCharArray()) {
-                if (c != ',') {
-                    if (!seen.add("" + c)) {
-                        flag = false;
-                    } else {
+                if (c != ',') {					// if c is a letter 
+                    if (seen.add("" + c)) {		// "" added to make it a string
                         flag = true;
                     }
                 }
@@ -173,8 +173,15 @@ public class ThirdNormalForm {
         }
         return attributes;
     }
+    
+    /*
+    private static HashSet<String> closureOfSubsets (HashSet<String> attributeList) {
+    	
+    }
+    */
+    
     public static void main (String[] args) throws FileNotFoundException {
-        File file = new File("input.txt");
+        File file = new File("input3.txt");
 
 //        for (String s: attributes) {
 //            System.out.println(s);
@@ -194,5 +201,11 @@ public class ThirdNormalForm {
 //        for (String s: fds) {
 //            System.out.println(s);
 //        }
+        
+        /*
+        List<String> fds2 = getFDList(file);
+        System.out.println(closure("1", fds2));
+        */
+        
     }
 }
