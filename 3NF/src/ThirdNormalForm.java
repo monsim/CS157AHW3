@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -137,6 +138,8 @@ public class ThirdNormalForm {
         for (String fd: fds) {
             result.add(fd.replaceAll(";", ","));
         }
+        // sort the resulting schemas by lexicographic order
+        Collections.sort(result);
         return clean(result);
     }
     private static List<String> clean(List<String> fds) {
@@ -181,7 +184,7 @@ public class ThirdNormalForm {
     */
     
     public static void main (String[] args) throws FileNotFoundException {
-        File file = new File("input3.txt");
+        File file = new File("input.txt");
 
 //        for (String s: attributes) {
 //            System.out.println(s);
