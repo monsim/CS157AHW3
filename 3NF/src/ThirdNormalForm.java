@@ -151,7 +151,7 @@ public class ThirdNormalForm {
     }
 
     /**
-     * Step 2.1: Schematizes the relations based off their minimal basis.
+     * Step 2: Schematizes the relations based off their minimal basis.
      * Example: AB -> C, C -> B, A -> D "schematized" becomes R1(A, B, C), R2(B, C), R3(A, D)
      * @param fds   the FDs of the relation to schematize
      * @return      the new relations based on the minimal basis
@@ -210,7 +210,7 @@ public class ThirdNormalForm {
      * @param attributes    the attributes of the relation
      * @return              the powerset of the attributes
      */
-    public static ArrayList<HashSet<String>> powerset(HashSet<String> attributes) {
+    private static ArrayList<HashSet<String>> powerset(HashSet<String> attributes) {
         ArrayList<HashSet<String>> sets = new ArrayList<HashSet<String>>();
         if (attributes.isEmpty()) {
             sets.add(new HashSet<String>());
@@ -235,7 +235,7 @@ public class ThirdNormalForm {
      * @param fds               the functional dependencies in respect to the attributes of the relation
      * @return                  a set of superkeys for the given relation
      */
-    public static HashSet<HashSet<String>> findSuperKeys(HashSet<String> attributeList, List<String> fds) {
+    private static HashSet<HashSet<String>> findSuperKeys(HashSet<String> attributeList, List<String> fds) {
         // a hash map where: Key = each set in the powerset, Value = each of the set's respective closures
         HashMap<HashSet<String>, HashSet<String>> setToClosure = new HashMap<>();
         ArrayList<HashSet<String>> attributePowerSet = powerset(attributeList);
@@ -265,6 +265,7 @@ public class ThirdNormalForm {
         return superkeys;
     }
     
+    
     /**
      * Finds the keys of a relation.
      * @param superkeys     the computed superkeys
@@ -291,28 +292,33 @@ public class ThirdNormalForm {
         return keys;
     }
     
+    // step 3: add a new relation containing the keys if there isn't one already
+    private static List<String> checkRelationsForKey(List<String> relations) {
+    	/*
+    	if (the current relations don't contain one with the keys)
+    			schematize the key and return that relation
+    	else
+    			return an empty list
+    	*/
+    	return null;
+    }
+    
+
     public static void main (String[] args) throws FileNotFoundException {
         File file = new File("input.txt");
 
-//        for (String s: attributes) {
-//            System.out.println(s);
-//        }
-
+        // Step 1:
         // Find a minimal basis for F, say G.
-        // For each FD X→A in G, use XA as the schema of one of the relations in the decomposition.
-        List<String> fds = schematize(minimalBasis(file));
-        for (String s: fds) {
+        // Step 2:
+        // For each FD X → A in G, use XA as the schema of one of the relations in the decomposition.
+        List<String> relations = schematize(minimalBasis(file));
+        for (String s: relations) {
             System.out.println(s);
         }
 
+        // Step 3:
         // If none of the relation schema from Step 2 is a superkey for R, add another relation whose schema is a key for R.
-        HashSet<String> attributes = getAttributes(file);
 
-//        List<String> fds = getFDList(file);
-//        for (String s: fds) {
-//            System.out.println(s);
-//        }
-        
         
         // Testing the key method
         List<String> fds3 = minimalBasis(file);
