@@ -1,13 +1,5 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.io.*;  
+import java.util.*;  
 
 public class ThirdNormalForm {
 
@@ -102,8 +94,8 @@ public class ThirdNormalForm {
             if(!string.substring(i, i + 1).equals(","))
                 result.add(string.substring(i, i+1));
         }
-        return result;
-    }
+        return result;   
+    } 
     
     /**
      * Computes the closure of attributes based on their respective FDs.
@@ -120,7 +112,7 @@ public class ThirdNormalForm {
         for (String attribute : LHSAttributes) {
             closure.add(attribute);
         }
-
+   
         while (!xOld.containsAll(closure)) {
             xOld = new HashSet<String>(closure);
             for (String fd: fds) {
@@ -293,14 +285,41 @@ public class ThirdNormalForm {
     }
     
     // step 3: add a new relation containing the keys if there isn't one already
-    private static List<String> checkRelationsForKey(List<String> relations) {
-    	/*
-    	if (the current relations don't contain one with the keys)
-    			schematize the key and return that relation
-    	else
-    			return an empty list
-    	*/
-    	return null;
+    /**
+     * checking if we need to add another relation that represents a key
+     * @return new relations with possible added key 
+     */
+    private static List<String> checkRelationsForKey(List<String> relations, List<HashSet<String>> keys, List<String> fds, HashSet<String> attributes) {
+    		List<String> keyList = new ArrayList<>();
+    		List<String> newRelations = relations;
+    		
+    		//check if current relations contain superkeys already, if it does then return the original relations
+    		for (String relation: newRelations) {
+    			if(closure(relation, fds).containsAll(attributes)) {
+    				return newRelations;
+    			}
+    		}
+    		
+    		//turning keys into a list of strings
+    		for (HashSet<String> set: keys) {
+    			String toChange = "";
+    			for (String s: set) {
+    				toChange += s + ",";
+    				toChange = toChange.replaceAll(" ", "");
+    			}
+    			if (toChange.endsWith(",")) {
+    				toChange = toChange.substring(0, toChange.length()-1);
+    			}
+    			
+    			keyList.add(toChange);
+    		}
+    		
+    		//sort keys by lexographic order 
+    		Collections.sort(keyList);
+    		
+    		//if we got here, none of the original relations were superkeys, so we need to add the first key in keyList as a relation
+    		newRelations.add(keyList.get(0));
+    		return newRelations;
     }
     
 
@@ -312,19 +331,15 @@ public class ThirdNormalForm {
         // Step 2:
         // For each FD X → A in G, use XA as the schema of one of the relations in the decomposition.
         List<String> relations = schematize(minimalBasis(file));
-        for (String s: relations) {
-            System.out.println(s);
-        }
 
         // Step 3:
         // If none of the relation schema from Step 2 is a superkey for R, add another relation whose schema is a key for R.
-
-        
-        // Testing the key method
         List<String> fds3 = minimalBasis(file);
         HashSet<String> attributeList = getAttributes(file);
-        System.out.println("Powerset: " + powerset(attributeList));
-        System.out.println("Keys: " + findKeys(findSuperKeys(attributeList, fds3)));
         
+        List<String> thirdNF = checkRelationsForKey(relations, findKeys(findSuperKeys(attributeList, fds3)), fds3, attributeList);
+        for (String relation: thirdNF) {
+            System.out.println(relation);
+        }
     }
 }
