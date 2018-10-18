@@ -3,8 +3,10 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ThirdNormalForm {
@@ -97,16 +99,27 @@ public class ThirdNormalForm {
     private static List<String> listifyString(String string) {
         List<String> result = new ArrayList<String>();
         for (int i = 0; i < string.length(); i++) {
-            if(!string.substring(i, i+1).equals(","))
+            if(!string.substring(i, i + 1).equals(","))
                 result.add(string.substring(i, i+1));
         }
         return result;
     }
     
+    /**
+     * Computes the closure of attributes based on their respective FDs.
+     * @param target    the attributes to find the closure of
+     * @param fds       their respective FDs
+     * @return          the closure of the attributes
+     */
     private static HashSet<String> closure(String target, List<String> fds ) {
         HashSet<String> closure = new HashSet<String>();
         HashSet<String> xOld = new HashSet<String>();
-        closure.add(target);
+        String[] LHSAttributes = target.split(",");
+        // Note: I changed this to compute the closure of more than 1 attribute, e.g. {AB}+
+        // whereas before it could only compute singleton attributes, like {A}+
+        for (String attribute : LHSAttributes) {
+            closure.add(attribute);
+        }
 
         while (!xOld.containsAll(closure)) {
             xOld = new HashSet<String>(closure);
@@ -128,11 +141,21 @@ public class ThirdNormalForm {
         return closure;
     }
 
+    /**
+     * Step 1: Finds the minimal basis for the relation.
+     * @param file  the file containing the original FDs
+     * @return      the minimal basis (as a list of strings)
+     */
     private static List<String> minimalBasis(File file) throws FileNotFoundException {
         return reduce(minimizeLHS(singletonRHS(getFDList(file))));
     }
 
-    // step 2
+    /**
+     * Step 2.1: Schematizes the relations based off their minimal basis.
+     * Example: AB -> C, C -> B, A -> D "schematized" becomes R1(A, B, C), R2(B, C), R3(A, D)
+     * @param fds   the FDs of the relation to schematize
+     * @return      the new relations based on the minimal basis
+     */
     private static List<String> schematize(List<String> fds) {
         List<String> result = new ArrayList<String>();
         for (String fd: fds) {
@@ -142,6 +165,11 @@ public class ThirdNormalForm {
         Collections.sort(result);
         return clean(result);
     }
+    
+    /**
+     * Deletes the proper subsets of a relation given its FDs.
+     * Example: R1(A, B, C), R2(B, C). We can delete R2 because it is a proper subset of R1.
+     */
     private static List<String> clean(List<String> fds) {
         List<String> result = new ArrayList<String>();
         HashSet<String> seen = new HashSet<String>();
@@ -152,8 +180,8 @@ public class ThirdNormalForm {
 //            }
             boolean flag = false;
             for (char c: fd.toCharArray()) {
-                if (c != ',') {					// if c is a letter 
-                    if (seen.add("" + c)) {		// "" added to make it a string
+                if (c != ',') {                 // if c is a letter 
+                    if (seen.add("" + c)) {     // "" added to make it a string
                         flag = true;
                     }
                 }
@@ -176,12 +204,92 @@ public class ThirdNormalForm {
         }
         return attributes;
     }
-    
-    /*
-    private static HashSet<String> closureOfSubsets (HashSet<String> attributeList) {
-    	
+
+    /**
+     * Computes the powerset (set of all subsets) of the attributes of a relation.
+     * @param attributes    the attributes of the relation
+     * @return              the powerset of the attributes
+     */
+    public static ArrayList<HashSet<String>> powerset(HashSet<String> attributes) {
+        ArrayList<HashSet<String>> sets = new ArrayList<HashSet<String>>();
+        if (attributes.isEmpty()) {
+            sets.add(new HashSet<String>());
+            return sets;
+        }
+        ArrayList<String> list = new ArrayList<String>(attributes);
+        String head = list.get(0);
+        HashSet<String> rest = new HashSet<String>(list.subList(1, list.size())); 
+        for (HashSet<String> set : powerset(rest)) {
+            HashSet<String> newSet = new HashSet<String>();
+            newSet.add(head);
+            newSet.addAll(set);
+            sets.add(newSet);
+            sets.add(set);
+        }       
+        return sets;
     }
-    */
+    
+    /**
+     * Finds the superkeys of a relation given the list of attributes and its FDs.
+     * @param attributeList     the list of attributes of the relation
+     * @param fds               the functional dependencies in respect to the attributes of the relation
+     * @return                  a set of superkeys for the given relation
+     */
+    public static HashSet<HashSet<String>> findSuperKeys(HashSet<String> attributeList, List<String> fds) {
+        // a hash map where: Key = each set in the powerset, Value = each of the set's respective closures
+        HashMap<HashSet<String>, HashSet<String>> setToClosure = new HashMap<>();
+        ArrayList<HashSet<String>> attributePowerSet = powerset(attributeList);
+        HashSet<HashSet<String>> superkeys = new HashSet<>();
+        
+        for (HashSet<String> set : attributePowerSet) {
+            // first convert the set to an array list
+            ArrayList<String> list = new ArrayList<String>(set);
+            // now convert that array list to a string since closure method takes in the LHS as a string
+            String attributes = "";
+            for (String s : list) {
+                attributes += s + ",";
+            }
+            // compute the closure of each set in the powerset and add that to closures
+            setToClosure.put(set, closure(attributes, fds));
+        }
+        
+        // go through each subset & closure and find the superkeys
+        for (Map.Entry<HashSet<String>, HashSet<String>> entry : setToClosure.entrySet()) {
+            // check each of the sets to see if they are a superkey (contains all the attributes)
+            if (entry.getValue().containsAll(attributeList)) {
+                // add that set in the superkey list
+                superkeys.add(entry.getKey());
+            }
+        }
+        
+        return superkeys;
+    }
+    
+    /**
+     * Finds the keys of a relation.
+     * @param superkeys     the computed superkeys
+     * @return              the keys of the relation
+     */
+    public static List<HashSet<String>> findKeys(HashSet<HashSet<String>> superkeys) {
+        List<HashSet<String>> keys = new ArrayList<HashSet<String>>();
+        int minimalKeySize = Integer.MAX_VALUE;
+        
+        // find the number of attributes of the minimal superkeys
+        for (HashSet<String> superkey : superkeys) {
+            if (superkey.size() < minimalKeySize) {
+                minimalKeySize = superkey.size();
+            }
+        }
+        
+        // loop through the superkeys again to get the actual keys
+        for (HashSet<String> superkey : superkeys) {
+            if (superkey.size() == minimalKeySize) {
+                keys.add(superkey);
+            }
+        }
+        
+        return keys;
+    }
     
     public static void main (String[] args) throws FileNotFoundException {
         File file = new File("input.txt");
@@ -205,10 +313,12 @@ public class ThirdNormalForm {
 //            System.out.println(s);
 //        }
         
-        /*
-        List<String> fds2 = getFDList(file);
-        System.out.println(closure("1", fds2));
-        */
+        
+        // Testing the key method
+        List<String> fds3 = minimalBasis(file);
+        HashSet<String> attributeList = getAttributes(file);
+        System.out.println("Powerset: " + powerset(attributeList));
+        System.out.println("Keys: " + findKeys(findSuperKeys(attributeList, fds3)));
         
     }
 }
