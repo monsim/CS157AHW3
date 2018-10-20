@@ -1,9 +1,18 @@
 import java.io.*;  
 import java.util.*;  
 
+/**
+ * 3NF algorithm for lossless join and dependency-preserving decomposition.
+ * Monsi Magal, Priscilla Ng, Conover Wang
+ */
 public class ThirdNormalForm {
 
-    // this removes the trivial dependencies as well
+	/**
+	 * Gets the list of FDs from the relation given an input file.
+	 * This function removes trivial FDs as well.
+	 * @param file		the input file with FDs
+	 * @return			the FDs as a list of strings
+	 */
     private static List<String> getFDList(File file) throws FileNotFoundException {
         Scanner scanner= new Scanner(file);
         List<String> list = new ArrayList<String>();
@@ -25,7 +34,13 @@ public class ThirdNormalForm {
         return list;
     }
 
-    private static List<String>  singletonRHS(List<String> fds) {
+    /**
+     * Applies the splitting rule to a list of FDs.
+     * Example: A -> BC becomes A -> B and A -> C
+     * @param fds	the original FDs as a list of strings
+     * @return		the FDs as a list of strings, with the split FDs added in
+     */
+    private static List<String> singletonRHS(List<String> fds) {
         List<String> result = new ArrayList<String>();
         for (String fd: fds) {
             String[] split = fd.split(";");
@@ -44,6 +59,11 @@ public class ThirdNormalForm {
         return result;
     }
 
+    /**
+     * Minimal basis reduction.
+     * @param fds	the FDs to reduce
+     * @return		the reduced list of FDs
+     */
     private static List<String> reduce(List<String> fds)  {
         List<String> result = new ArrayList<String>();
         for (String fd: fds) {
@@ -60,6 +80,12 @@ public class ThirdNormalForm {
         }
         return result;
     }
+    
+    /**
+     * Part of the minimal basis algorithm for minimizing the LHS of the FDs.
+     * @param fds	the list of FDs to minimize
+     * @return		a minimized list of FDs
+     */
     private static List<String> minimizeLHS(List<String> fds ) {
         List<String> result = new ArrayList<String>();
         for( String fd: fds) {
@@ -73,6 +99,9 @@ public class ThirdNormalForm {
         return result;
     }
 
+    /**
+     * Helper function for minimizeLHS.
+     */
     private static String removeLHS(String leftFD, List<String> fds) {
         String result = leftFD;
         for( int i = 0; i < leftFD.length(); i++) {
@@ -88,6 +117,9 @@ public class ThirdNormalForm {
         return result;
     }
 
+    /**
+     * Helper function for closure method.
+     */
     private static List<String> listifyString(String string) {
         List<String> result = new ArrayList<String>();
         for (int i = 0; i < string.length(); i++) {
@@ -95,7 +127,7 @@ public class ThirdNormalForm {
                 result.add(string.substring(i, i+1));
         }
         return result;   
-    } 
+    }
     
     /**
      * Computes the closure of attributes based on their respective FDs.
@@ -107,8 +139,8 @@ public class ThirdNormalForm {
         HashSet<String> closure = new HashSet<String>();
         HashSet<String> xOld = new HashSet<String>();
         String[] LHSAttributes = target.split(",");
-        // Note: I changed this to compute the closure of more than 1 attribute, e.g. {AB}+
-        // whereas before it could only compute singleton attributes, like {A}+
+        // Note: this computes the closure of more than 1 attributes, e.g. {AB}+,
+        // as well as singleton attributes like {A}+ and {B}+
         for (String attribute : LHSAttributes) {
             closure.add(attribute);
         }
@@ -324,7 +356,7 @@ public class ThirdNormalForm {
     
 
     public static void main (String[] args) throws FileNotFoundException {
-        File file = new File("input.txt");
+        File file = new File(args[0]);
 
         // Step 1:
         // Find a minimal basis for F, say G.
@@ -338,6 +370,8 @@ public class ThirdNormalForm {
         HashSet<String> attributeList = getAttributes(file);
         
         List<String> thirdNF = checkRelationsForKey(relations, findKeys(findSuperKeys(attributeList, fds3)), fds3, attributeList);
+        
+        // print the results
         for (String relation: thirdNF) {
             System.out.println(relation);
         }
